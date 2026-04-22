@@ -84,13 +84,5 @@ It is designed for learning purposes and follows clean coding practices suitable
 
 
 
----
-
-
-
-\## 📂 Project Structure
-
-
-
 
 
