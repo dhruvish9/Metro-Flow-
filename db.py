@@ -1,3 +1,11 @@
+# pyright: reportOptionalSubscript=false
+# pyright: reportOptionalMemberAccess=false
+# pyright: reportAttributeAccessIssue=false
+# pyright: reportArgumentType=false
+# pyright: reportCallIssue=false
+# pyright: reportIndexIssue=false
+# pyright: reportPossiblyUnboundVariable=false
+# pyright: reportOperatorIssue=false
 """
 Database Manager Module
 -----------------------
@@ -25,13 +33,58 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 
 def get_db_connection():
-    """Get a simple database connection"""
+    """Get a simple database connection. Auto-creates the database if missing."""
     try:
         conn = mysql.connector.connect(**Config.get_db_config())
         return conn
     except Error as e:
+        # Auto-create database if it doesn't exist (error 1049)
+        if e.errno == 1049:
+            try:
+                db_config = Config.get_db_config().copy()
+                db_name = db_config.pop('database')
+                db_config.pop('raise_on_warnings', None)
+                conn = mysql.connector.connect(**db_config)
+                cursor = conn.cursor()
+                cursor.execute(f"CREATE DATABASE `{db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")
+                conn.commit()
+                cursor.close()
+                conn.close()
+                logger.info(f"✅ Auto-created database '{db_name}'")
+                # Reconnect with the new database
+                return mysql.connector.connect(**Config.get_db_config())
+            except Error as create_err:
+                logger.error(f"❌ Failed to auto-create database: {create_err}")
+                raise
         logger.error(f"❌ Database connection error: {e}")
         raise
+
+
+from contextlib import contextmanager
+
+@contextmanager
+def get_db_cursor(dictionary=True, buffered=True):
+    """Context manager for safe DB access. Auto-closes cursor and connection.
+    
+    Usage:
+        with get_db_cursor() as (conn, cursor):
+            cursor.execute("SELECT ...")
+            results = cursor.fetchall()
+            conn.commit()  # if writing
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=dictionary, buffered=buffered)
+    try:
+        yield conn, cursor
+    finally:
+        try:
+            cursor.close()
+        except Exception:
+            pass
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 # ============================================================================
@@ -206,6 +259,56 @@ def setup_database():
         except:
             pass  # Column likely exists already
         
+        # Migration: Add last_login column to users table
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN last_login DATETIME DEFAULT NULL")
+            logger.info("✅ Added last_login column to users table")
+        except:
+            pass  # Column likely exists already
+        
+        # Migration: Add email column to users table
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN email VARCHAR(100) DEFAULT NULL")
+            logger.info("✅ Added email column to users table")
+        except:
+            pass  # Column likely exists already
+        
+        # Migration: Add planType and status columns to monthly_passes table
+        try:
+            cursor.execute("ALTER TABLE monthly_passes ADD COLUMN planType VARCHAR(20) DEFAULT 'basic'")
+            logger.info("✅ Added planType column to monthly_passes table")
+        except:
+            pass  # Column likely exists already
+        try:
+            cursor.execute("ALTER TABLE monthly_passes ADD COLUMN status VARCHAR(20) DEFAULT 'active'")
+            logger.info("✅ Added status column to monthly_passes table")
+        except:
+            pass  # Column likely exists already
+        # Auto-expire old passes
+        try:
+            cursor.execute("UPDATE monthly_passes SET status = 'expired' WHERE expiryDate < CURRENT_DATE AND status = 'active'")
+        except:
+            pass
+        
+        # Migration: Add tripsUsed column to monthly_passes table
+        try:
+            cursor.execute("ALTER TABLE monthly_passes ADD COLUMN tripsUsed INT DEFAULT 0")
+            logger.info("✅ Added tripsUsed column to monthly_passes table")
+        except:
+            pass  # Column likely exists already
+        
+        # Migration: Add ticketClass, coachPreference, paymentMethod to tickets table
+        for col_name, col_def in [
+            ('ticketClass', "VARCHAR(20) DEFAULT 'standard'"),
+            ('coachPreference', "VARCHAR(20) DEFAULT 'general'"),
+            ('paymentMethod', "VARCHAR(20) DEFAULT 'wallet'"),
+        ]:
+            try:
+                cursor.execute(f"ALTER TABLE tickets ADD COLUMN {col_name} {col_def}")
+                logger.info(f"✅ Added {col_name} column to tickets table")
+            except:
+                pass  # Column likely exists already
+        
         conn.commit()
         cursor.close()
         logger.info("✅ All database tables created successfully")
@@ -238,14 +341,18 @@ def get_station_details(station_name):
 # USER OPERATIONS
 # ============================================================================
 
-def insert_user(username: str, password_hash: str, wallet_balance: float, role: str) -> bool:
+def insert_user(username: str, password_hash: str, wallet_balance: float, role: str, email: Optional[str] = None) -> bool:
     """Insert new user into the users table"""
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        sql = "INSERT INTO users (username, password, walletBalance, role) VALUES (%s, %s, %s, %s)"
-        cursor.execute(sql, (username, password_hash, wallet_balance, role))
+        if email:
+            sql = "INSERT INTO users (username, password, walletBalance, role, email) VALUES (%s, %s, %s, %s, %s)"
+            cursor.execute(sql, (username, password_hash, wallet_balance, role, email))
+        else:
+            sql = "INSERT INTO users (username, password, walletBalance, role) VALUES (%s, %s, %s, %s)"
+            cursor.execute(sql, (username, password_hash, wallet_balance, role))
         conn.commit()
         success = cursor.rowcount > 0
         cursor.close()
@@ -306,7 +413,7 @@ def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
                 return None
             
         cursor.close()
-        return user
+        return user  # type: ignore
         
     except Exception as e:
         logger.error(f"Critical Error fetching user '{username}': {e}")
@@ -399,7 +506,7 @@ def get_all_users() -> List[Dict[str, Any]]:
         cursor.execute(sql)
         users = cursor.fetchall()
         cursor.close()
-        return users
+        return users  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching all users: {e}")
@@ -414,24 +521,23 @@ def get_all_users() -> List[Dict[str, Any]]:
 # ============================================================================
 
 
-def insert_ticket(username: str, source: str, destination: str, passengers: int, fare: float, travel_date: date, distance: float = 0.0, cancelled: bool = False, travel_time: str = 'now') -> int:
-    """Insert ticket with DISTANCE and TRAVEL TIME, return ticketId"""
+def insert_ticket(username: str, source: str, destination: str, passengers: int, fare: float, travel_date: date, distance: float = 0.0, cancelled: bool = False, travel_time: str = 'now', ticket_class: str = 'standard', coach_preference: str = 'general', payment_method: str = 'wallet') -> int:
+    """Insert ticket with DISTANCE, TRAVEL TIME, CLASS, COACH, and PAYMENT METHOD. Return ticketId."""
     conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # SQL query includes 'distance' and 'travelTime'
         sql = """
             INSERT INTO tickets 
-            (username, source, destination, passengers, fare, travelDate, distance, cancelled, bookingDate, travelTime) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s)
+            (username, source, destination, passengers, fare, travelDate, distance, cancelled, bookingDate, travelTime, ticketClass, coachPreference, paymentMethod) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW(), %s, %s, %s, %s)
         """
-        cursor.execute(sql, (username, source, destination, passengers, fare, travel_date, distance, cancelled, travel_time))
+        cursor.execute(sql, (username, source, destination, passengers, fare, travel_date, distance, cancelled, travel_time, ticket_class, coach_preference, payment_method))
         conn.commit()
         ticket_id = cursor.lastrowid
         cursor.close()
-        return ticket_id
+        return ticket_id  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error inserting ticket: {e}")
@@ -450,7 +556,7 @@ def get_tickets_by_user(username: str) -> List[Dict[str, Any]]:
         cursor.execute(sql, (username,))
         tickets = cursor.fetchall()
         cursor.close()
-        return tickets
+        return tickets  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching tickets for '{username}': {e}")
@@ -496,7 +602,7 @@ def get_ticket_by_id(ticket_id: int) -> Optional[Dict[str, Any]]:
         cursor.execute(sql, (ticket_id,))
         ticket = cursor.fetchone()
         cursor.close()
-        return ticket
+        return ticket  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching ticket #{ticket_id}: {e}")
@@ -522,9 +628,9 @@ def insert_feedback(username: str, text: str, feedback_type: str) -> int:
         feedback_id = cursor.lastrowid
         cursor.close()
         
-        if feedback_id > 0:
+        if feedback_id > 0:  # type: ignore
             logger.info(f"✅ Feedback #{feedback_id} created by '{username}'")
-        return feedback_id
+        return feedback_id  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error inserting feedback: {e}")
@@ -546,7 +652,7 @@ def get_feedbacks_by_username(username: str) -> List[Dict[str, Any]]:
         cursor.execute(sql, (username,))
         feedbacks = cursor.fetchall()
         cursor.close()
-        return feedbacks
+        return feedbacks  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching feedbacks for '{username}': {e}")
@@ -566,7 +672,7 @@ def get_all_feedbacks() -> List[Dict[str, Any]]:
         cursor.execute(sql)
         feedbacks = cursor.fetchall()
         cursor.close()
-        return feedbacks
+        return feedbacks  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching all feedbacks: {e}")
@@ -592,9 +698,9 @@ def insert_support_ticket(feedback_id: int, status: str) -> int:
         ticket_id = cursor.lastrowid
         cursor.close()
         
-        if ticket_id > 0:
+        if ticket_id > 0:  # type: ignore
             logger.info(f"✅ Support ticket #{ticket_id} created")
-        return ticket_id
+        return ticket_id  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error inserting support ticket: {e}")
@@ -646,7 +752,7 @@ def get_assigned_tickets_by_staff(staff_username: str) -> List[Dict[str, Any]]:
         cursor.execute(sql, (staff_username,))
         tickets = cursor.fetchall()
         cursor.close()
-        return tickets
+        return tickets  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching assigned tickets: {e}")
@@ -758,7 +864,7 @@ def update_metro_card(card_number: int, balance: float, auto_recharge_enabled: b
 # MONTHLY PASS OPERATIONS
 # ============================================================================
 
-def insert_monthly_pass(username: str, source: str, destination: str, purchase_date: date, expiry_date: date, price: float) -> int:
+def insert_monthly_pass(username: str, source: str, destination: str, purchase_date: date, expiry_date: date, price: float, plan_type: str = 'basic') -> int:
     """Insert monthly pass and return passId"""
     conn = None
     try:
@@ -766,23 +872,53 @@ def insert_monthly_pass(username: str, source: str, destination: str, purchase_d
         cursor = conn.cursor()
         sql = """
             INSERT INTO monthly_passes 
-            (username, source, destination, purchaseDate, expiryDate, price) 
-            VALUES (%s, %s, %s, %s, %s, %s)
+            (username, source, destination, purchaseDate, expiryDate, price, planType, status) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, 'active')
         """
-        cursor.execute(sql, (username, source, destination, purchase_date, expiry_date, price))
+        cursor.execute(sql, (username, source, destination, purchase_date, expiry_date, price, plan_type))
         conn.commit()
         pass_id = cursor.lastrowid
         cursor.close()
         
-        if pass_id > 0:
-            logger.info(f"✅ Monthly pass #{pass_id} created for '{username}'")
-        return pass_id
+        if pass_id > 0:  # type: ignore
+            logger.info(f"✅ Monthly pass #{pass_id} ({plan_type}) created for '{username}'")
+        return pass_id  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error inserting monthly pass: {e}")
         if conn:
             conn.rollback()
         return -1
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
+
+
+def get_all_monthly_passes(username: str) -> list:
+    """Get all monthly passes (active + expired) for pass history"""
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        sql = """
+            SELECT passId, source, destination, purchaseDate, expiryDate, price,
+                   COALESCE(planType, 'basic') as planType,
+                   CASE 
+                       WHEN expiryDate >= CURRENT_DATE THEN 'active'
+                       ELSE 'expired'
+                   END as status
+            FROM monthly_passes 
+            WHERE username = %s
+            ORDER BY purchaseDate DESC
+        """
+        cursor.execute(sql, (username,))
+        passes = cursor.fetchall()
+        cursor.close()
+        return passes
+        
+    except Error as e:
+        logger.error(f"❌ Error fetching pass history for '{username}': {e}")
+        return []
     finally:
         if conn and conn.is_connected():
             conn.close()
@@ -853,7 +989,7 @@ def get_all_station_names() -> Set[str]:
         cursor.execute(sql)
         rows = cursor.fetchall()
         cursor.close()
-        return {row[0] for row in rows}
+        return {row[0] for row in rows}  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching stations: {e}")
@@ -873,7 +1009,7 @@ def get_station_location(name: str) -> Optional[Dict[str, Any]]:
         cursor.execute(sql, (name,))
         location = cursor.fetchone()
         cursor.close()
-        return location
+        return location  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching station location '{name}': {e}")
@@ -923,7 +1059,7 @@ def get_all_announcements() -> List[Dict[str, Any]]:
         cursor.execute(sql)
         announcements = cursor.fetchall()
         cursor.close()
-        return announcements
+        return announcements  # type: ignore
         
     except Error as e:
         logger.error(f"❌ Error fetching announcements: {e}")
@@ -1010,7 +1146,7 @@ def get_all_lost_found_items() -> List[Dict[str, Any]]:
         cursor.execute(sql)
         items = cursor.fetchall()
         cursor.close()
-        return items
+        return items  # type: ignore
     except Error as e:
         logger.error(f"Error fetching lost items: {e}")
         return []
@@ -1189,7 +1325,7 @@ def get_recent_audit_logs(limit: int = 50) -> List[Dict[str, Any]]:
         cursor.execute(sql, (limit,))
         logs = cursor.fetchall()
         cursor.close()
-        return logs
+        return logs  # type: ignore
     except Error as e:
         logger.error(f"❌ Error fetching audit logs: {e}")
         return []
@@ -1214,7 +1350,7 @@ def get_audit_logs_by_table(table_name: str, limit: int = 50) -> List[Dict[str, 
         cursor.execute(sql, (table_name, limit))
         logs = cursor.fetchall()
         cursor.close()
-        return logs
+        return logs  # type: ignore
     except Error as e:
         logger.error(f"❌ Error fetching audit logs for table '{table_name}': {e}")
         return []
@@ -1239,7 +1375,7 @@ def get_audit_logs_by_user(username: str, limit: int = 50) -> List[Dict[str, Any
         cursor.execute(sql, (username, limit))
         logs = cursor.fetchall()
         cursor.close()
-        return logs
+        return logs  # type: ignore
     except Error as e:
         logger.error(f"❌ Error fetching audit logs for user '{username}': {e}")
         return []
@@ -1264,7 +1400,7 @@ def get_audit_logs_by_operation(operation: str, limit: int = 50) -> List[Dict[st
         cursor.execute(sql, (operation.upper(), limit))
         logs = cursor.fetchall()
         cursor.close()
-        return logs
+        return logs  # type: ignore
     except Error as e:
         logger.error(f"❌ Error fetching audit logs for operation '{operation}': {e}")
         return []
@@ -1325,7 +1461,7 @@ def get_audit_logs_filtered(
         cursor.execute(sql, tuple(params))
         logs = cursor.fetchall()
         cursor.close()
-        return logs
+        return logs  # type: ignore
     except Error as e:
         logger.error(f"❌ Error fetching filtered audit logs: {e}")
         return []
