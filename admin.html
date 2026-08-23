@@ -1,0 +1,2318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metro Admin | Control Center</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --accent: #00f2fe;
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+            --sidebar-width: 280px;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2d3748;
+            overflow-x: hidden;
+        }
+
+        /* --- Animated Background Particles --- */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+
+            50% {
+                transform: translate(50px, -50px) rotate(180deg);
+            }
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            height: calc(100vh - 40px);
+            position: fixed;
+            left: 20px;
+            top: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            padding: 30px 0;
+            overflow-y: auto;
+            border: var(--glass-border);
+            transition: all 0.3s ease;
+        }
+
+        .brand-logo {
+            padding: 0 30px 30px;
+            font-size: 26px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            padding: 10px 30px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #a0aec0;
+            letter-spacing: 1px;
+        }
+
+        .nav-item {
+            padding: 14px 30px;
+            margin: 4px 15px;
+            border-radius: 12px;
+            cursor: pointer;
+            color: #718096;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Make green text more visible on purple/blue backgrounds */
+        .text-success {
+            color: #7fff00 !important;
+            text-shadow: 0 0 8px rgba(127, 255, 0, 0.6);
+            font-weight: 600;
+        }
+
+        .nav-item i {
+            width: 24px;
+            margin-right: 12px;
+            font-size: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(102, 126, 234, 0.1);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+
+        .nav-item:hover i {
+            transform: scale(1.2);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            margin-left: calc(var(--sidebar-width) + 40px);
+            padding: 30px;
+            padding-right: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ===== RESPONSIVE DESIGN ===== */
+        @media (max-width: 1200px) {
+            .sidebar {
+                width: 250px;
+            }
+
+            .main-content {
+                margin-left: 270px;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                left: 0;
+                top: 0;
+                height: 100vh;
+                border-radius: 0;
+                width: 280px;
+            }
+
+            .sidebar.show {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+                padding: 20px;
+            }
+
+            .stat-card {
+                margin-bottom: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .brand-logo {
+                font-size: 22px;
+            }
+
+            .nav-item {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .main-content {
+                padding: 15px 10px;
+            }
+
+            .card-glass {
+                padding: 15px !important;
+            }
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 10px;
+            padding: 8px 11px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            background: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 992px) {
+            .menu-toggle {
+                display: block;
+            }
+        }
+
+        /* --- Glass Cards --- */
+        .card-glass {
+            background: var(--glass-bg);
+            border: var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+
+        .card-glass:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* --- Stat Widgets --- */
+        .stat-card {
+            border-radius: 24px;
+            padding: 25px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px) scale(1.02);
+        }
+
+        .stat-card.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .stat-card.secondary {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            color: #1a4731;
+        }
+
+        .stat-card.info {
+            background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+            color: #5e1b20;
+        }
+
+        .stat-card .icon-bg {
+            position: absolute;
+            right: -20px;
+            bottom: -20px;
+            font-size: 120px;
+            opacity: 0.15;
+            transform: rotate(-15deg);
+        }
+
+        /* --- Custom Tables --- */
+        .table-glass {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 10px;
+        }
+
+        .table-glass thead th {
+            font-weight: 700;
+            color: #718096;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            padding: 12px 16px;
+            border: none;
+        }
+
+        .table-glass tbody tr {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+
+        .table-glass tbody tr:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-glass tbody td {
+            padding: 14px 16px;
+            border: none;
+        }
+
+        .table-glass tbody tr td:first-child {
+            border-radius: 12px 0 0 12px;
+        }
+
+        .table-glass tbody tr td:last-child {
+            border-radius: 0 12px 12px 0;
+        }
+
+        /* --- View Sections --- */
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Cancellation Donut Chart --- */
+        .cancel-donut-container {
+            position: relative;
+            width: 160px;
+            height: 160px;
+            margin: 0 auto;
+        }
+
+        .cancel-donut-svg {
+            width: 160px;
+            height: 160px;
+            transform: rotate(-90deg);
+        }
+
+        .cancel-donut-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 10;
+        }
+
+        .cancel-donut-fill {
+            fill: none;
+            stroke-width: 10;
+            stroke-linecap: round;
+            stroke: #10b981;
+            transition: stroke-dasharray 1s ease, stroke 0.5s ease;
+        }
+
+        .cancel-donut-fill.status-healthy {
+            stroke: #10b981;
+        }
+
+        .cancel-donut-fill.status-watch {
+            stroke: #f59e0b;
+        }
+
+        .cancel-donut-fill.status-high {
+            stroke: #ef4444;
+        }
+
+        .cancel-donut-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .cancel-donut-center .rate-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
+            line-height: 1;
+        }
+
+        .cancel-donut-center .rate-sub {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cancel-stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            margin-bottom: 6px;
+        }
+
+        .cancel-stat-row .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .cancel-stat-row .stat-label i {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .cancel-stat-row .stat-val {
+            font-size: 14px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .cancel-progress-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .cancel-progress-bar .fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1s ease;
+        }
+
+        .pulse-badge {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        /* Logout Button */
+        .logout-btn {
+            margin: 20px 15px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            width: calc(100% - 30px);
+        }
+
+        .logout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
+        }
+
+        /* === Toast Notifications === */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 99999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .admin-toast {
+            pointer-events: auto;
+            min-width: 320px;
+            max-width: 420px;
+            padding: 14px 20px;
+            border-radius: 14px;
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+            animation: toastSlideIn 0.35s ease forwards;
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-toast.success {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .admin-toast.error {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .admin-toast.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .admin-toast.info {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+        }
+
+        .admin-toast.removing {
+            animation: toastSlideOut 0.3s ease forwards;
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                opacity: 0;
+                transform: translateX(60px) scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+            }
+        }
+
+        @keyframes toastSlideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            to {
+                opacity: 0;
+                transform: translateX(60px);
+            }
+        }
+
+        /* === Live Pulse Dot === */
+        .stat-pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: statPulse 2s infinite;
+            margin-right: 6px;
+        }
+
+        @keyframes statPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
+            }
+
+            50% {
+                opacity: 0.6;
+                box-shadow: 0 0 0 6px rgba(255, 255, 255, 0);
+            }
+        }
+
+        .stat-updated {
+            font-size: 10px;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+
+        @keyframes statGlow {
+            0% {
+                text-shadow: none;
+            }
+
+            50% {
+                text-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            }
+
+            100% {
+                text-shadow: none;
+            }
+        }
+
+        .stat-glow {
+            animation: statGlow 0.8s ease;
+        }
+
+        /* === Quick Actions === */
+        .quick-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .quick-action-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .quick-action-btn i {
+            font-size: 18px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        /* === Auto-Refresh Indicator === */
+        .auto-refresh-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #10b981;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .auto-refresh-badge i {
+            animation: autoSpin 3s linear infinite;
+        }
+
+        @keyframes autoSpin {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* === Cancellation Widget (enhanced) === */
+        .cancel-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .cancel-card-header h6 {
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .cancel-section-divider {
+            border: none;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 14px 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Mobile Menu Toggle -->
+    <button class="menu-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Animated Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="brand-logo">
+            <i class="fas fa-bolt"></i> MetroAdmin
+        </div>
+
+        <div class="section-title">OVERVIEW</div>
+        <div class="nav-item active" onclick="showView('dashboard')">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </div>
+        <div class="nav-item" onclick="showView('live')">
+            <i class="fas fa-satellite-dish"></i> Live Monitor
+        </div>
+
+        <div class="section-title">MANAGEMENT</div>
+        <div class="nav-item" onclick="showView('stations')">
+            <i class="fas fa-building"></i> Stations
+        </div>
+        <div class="nav-item" onclick="showView('users')">
+            <i class="fas fa-users-cog"></i> User Data
+        </div>
+        <div class="nav-item" onclick="showView('feedback')">
+            <i class="fas fa-comments"></i> Feedback
+        </div>
+
+        <div class="nav-item" onclick="showView('analytics')">
+            <i class="fas fa-chart-line"></i> Analytics
+        </div>
+
+        <div class="section-title">CONTROL</div>
+        <div class="nav-item" onclick="showView('notifications')">
+            <i class="fas fa-bullhorn"></i> Announcements
+        </div>
+        <div class="nav-item" onclick="showView('emergency')">
+            <i class="fas fa-exclamation-triangle"></i> Emergency
+        </div>
+
+        <button class="logout-btn" onclick="logout()">
+            <i class="fas fa-sign-out-alt me-2"></i> Logout
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Toast Container -->
+        <div class="toast-container" id="toastContainer"></div>
+
+        <!-- Top Bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold text-white mb-0" id="adminGreeting">Admin Control Center</h2>
+                <p class="text-white opacity-75 mb-0" id="adminSubGreeting">Real-time Metro System Management</p>
+            </div>
+            <div class="d-flex gap-3 align-items-center">
+                <div class="auto-refresh-badge">
+                    <i class="fas fa-sync-alt"></i> Auto-refreshing
+                </div>
+                <div class="card-glass py-2 px-3 fw-bold">
+                    <i class="far fa-clock me-2"></i><span id="live-clock">12:00 PM</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard View -->
+        <div id="dashboard" class="view-section active">
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="0">
+                    <div class="stat-card primary">
+                        <i class="fas fa-wallet icon-bg"></i>
+                        <h6 class="text-white-50 text-uppercase mb-2"><span class="stat-pulse"></span>Total Revenue</h6>
+                        <h2 class="fw-bold mb-0 display-5" id="stat-revenue-val">₹<span id="total-revenue">0</span></h2>
+                        <div class="mt-3 text-white-50 small"><i class="fas fa-arrow-up"></i> <span
+                                id="revenue-growth">12%</span> vs last week</div>
+                        <div class="stat-updated" id="stat-updated-revenue">Updated just now</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="100">
+                    <div class="stat-card secondary">
+                        <i class="fas fa-ticket-alt icon-bg"></i>
+                        <h6 class="opacity-75 text-uppercase mb-2"><span class="stat-pulse"></span>Tickets Sold</h6>
+                        <h2 class="fw-bold mb-0 display-5" id="total-tickets">0</h2>
+                        <div class="mt-3 opacity-75 small">Lifetime bookings</div>
+                        <div class="stat-updated" id="stat-updated-tickets">Updated just now</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="200">
+                    <div class="stat-card info">
+                        <i class="fas fa-users icon-bg"></i>
+                        <h6 class="text-white-50 text-uppercase mb-2"><span class="stat-pulse"></span>Active Users</h6>
+                        <h2 class="fw-bold mb-0 display-5" id="total-users">0</h2>
+                        <div class="mt-3 text-white-50 small"><i class="fas fa-user-plus"></i> Growing community</div>
+                        <div class="stat-updated" id="stat-updated-users">Updated just now</div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat-card warning">
+                        <i class="fas fa-coins icon-bg"></i>
+                        <h6 class="opacity-75 text-uppercase mb-2"><span class="stat-pulse"></span>Today's Income</h6>
+                        <h2 class="fw-bold mb-0 display-5" id="stat-today-val">₹<span id="today-revenue">0</span></h2>
+                        <div class="mt-3 opacity-75 small">Updated just now</div>
+                        <div class="stat-updated" id="stat-updated-today">Updated just now</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="mb-4" data-aos="fade-up" data-aos-delay="400">
+                <div class="quick-actions">
+                    <button class="quick-action-btn" onclick="quickAnnouncement()">
+                        <i class="fas fa-bullhorn"></i> New Announcement
+                    </button>
+                    <button class="quick-action-btn" onclick="quickEmergency()">
+                        <i class="fas fa-exclamation-triangle"></i> Emergency Alert
+                    </button>
+                    <button class="quick-action-btn" onclick="exportReport()">
+                        <i class="fas fa-file-export"></i> Export Report
+                    </button>
+                    <button class="quick-action-btn" onclick="refreshAll()">
+                        <i class="fas fa-sync-alt"></i> Refresh All
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8 mb-4">
+                    <div class="glass-card h-100 p-4"
+                        style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);">
+                        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                            <div>
+                                <h4 class="fw-bold mb-0 text-white">Revenue Analytics</h4>
+                                <small class="text-white opacity-50">Financial performance overview</small>
+                            </div>
+
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-light active"
+                                    onclick="loadRevenueChart('week')">Week</button>
+                                <button type="button" class="btn btn-sm btn-outline-light"
+                                    onclick="loadRevenueChart('month')">Month</button>
+                                <button type="button" class="btn btn-sm btn-outline-light"
+                                    onclick="loadRevenueChart('year')">Year</button>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="p-3 rounded-3"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                    <small class="text-uppercase text-white opacity-50 fw-bold"
+                                        style="font-size: 10px;">Total Revenue</small>
+                                    <h3 class="mb-0 text-white mt-1">₹<span id="statRevenue">0</span></h3>
+                                    <small class="text-success" id="revenue-growth-indicator"><i
+                                            class="fas fa-arrow-up me-1"></i>+12.5%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 rounded-3"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                    <small class="text-uppercase text-white opacity-50 fw-bold"
+                                        style="font-size: 10px;">Tickets Sold</small>
+                                    <h3 class="mb-0 text-white mt-1" id="statTickets">0</h3>
+                                    <small class="text-success"><i class="fas fa-arrow-up me-1"></i>+5.2%</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="p-3 rounded-3"
+                                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+                                    <small class="text-uppercase text-white opacity-50 fw-bold"
+                                        style="font-size: 10px;">Active Users</small>
+                                    <h3 class="mb-0 text-white mt-1" id="statUsers">0</h3>
+                                    <small class="text-warning"><i class="fas fa-minus me-1"></i>0.8%</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="position: relative; height: 350px; width: 100%;">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="glass-card p-4 h-100"
+                        style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);">
+                        <!-- Header -->
+                        <div class="cancel-card-header">
+                            <div>
+                                <h6 class="fw-bold text-white mb-0"><i class="fas fa-chart-pie me-2"></i>Cancellation
+                                    Rate</h6>
+                                <small class="text-white" style="opacity: 0.5; font-size: 11px;">Ticket cancellation
+                                    analytics</small>
+                            </div>
+                            <span class="badge rounded-pill" id="cancel-rate-badge"
+                                style="font-size: 10px; background: rgba(16,185,129,0.3); color: #6ee7b7; padding: 5px 12px;">Healthy</span>
+                        </div>
+
+                        <!-- Donut Chart -->
+                        <div class="cancel-donut-container">
+                            <svg class="cancel-donut-svg" viewBox="0 0 160 160">
+                                <circle class="cancel-donut-bg" cx="80" cy="80" r="65" />
+                                <circle class="cancel-donut-fill status-healthy" id="cancel-donut-fill" cx="80" cy="80"
+                                    r="65" stroke-dasharray="0, 408.4" />
+                            </svg>
+                            <div class="cancel-donut-center">
+                                <div class="rate-value" id="cancel-rate-value">0%</div>
+                                <div class="rate-sub">Cancelled</div>
+                            </div>
+                        </div>
+
+                        <hr class="cancel-section-divider">
+
+                        <!-- Breakdown Stats -->
+                        <div class="cancel-stat-row">
+                            <span class="stat-label">
+                                <i style="background: rgba(16,185,129,0.25); color: #6ee7b7;"><i
+                                        class="fas fa-ticket-alt"></i></i>
+                                Total Bookings
+                            </span>
+                            <span class="stat-val" id="cancel-total">0</span>
+                        </div>
+                        <div class="cancel-stat-row">
+                            <span class="stat-label">
+                                <i style="background: rgba(239,68,68,0.25); color: #fca5a5;"><i
+                                        class="fas fa-times-circle"></i></i>
+                                Cancelled
+                            </span>
+                            <span class="stat-val" id="cancel-count">0</span>
+                        </div>
+                        <div class="cancel-stat-row">
+                            <span class="stat-label">
+                                <i style="background: rgba(59,130,246,0.25); color: #93c5fd;"><i
+                                        class="fas fa-check-circle"></i></i>
+                                Successful
+                            </span>
+                            <span class="stat-val" id="cancel-success">0</span>
+                        </div>
+
+                        <hr class="cancel-section-divider">
+
+                        <!-- Success vs Cancel Bar -->
+                        <div style="margin-bottom: 10px;">
+                            <div class="d-flex justify-content-between"
+                                style="font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 4px;">
+                                <span>Success Rate</span>
+                                <span id="cancel-success-pct">100%</span>
+                            </div>
+                            <div class="cancel-progress-bar">
+                                <div class="fill" id="cancel-success-bar"
+                                    style="width: 100%; background: linear-gradient(90deg, #10b981, #34d399);"></div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 10px;">
+                            <div class="d-flex justify-content-between"
+                                style="font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 4px;">
+                                <span>Cancel Rate</span>
+                                <span id="cancel-fail-pct">0%</span>
+                            </div>
+                            <div class="cancel-progress-bar">
+                                <div class="fill" id="cancel-fail-bar"
+                                    style="width: 0%; background: linear-gradient(90deg, #ef4444, #f87171);"></div>
+                            </div>
+                        </div>
+
+                        <hr class="cancel-section-divider">
+
+                        <!-- Footer info -->
+                        <div class="d-flex justify-content-between align-items-center"
+                            style="font-size: 11px; color: rgba(255,255,255,0.5);">
+                            <span><i class="fas fa-sync-alt me-1"></i> Auto-refreshes every 30s</span>
+                            <span id="cancel-updated">Updated just now</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Monitor View -->
+        <div id="live" class="view-section">
+            <div class="card-glass">
+                <h5 class="fw-bold mb-4"><i class="fas fa-satellite-dish me-2 text-danger"></i>Live Transaction Feed
+                </h5>
+                <div id="live-feed" style="max-height: 600px; overflow-y: auto;">
+                    <div class="text-center text-muted p-5">Connecting to feed...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stations View -->
+        <div id="stations" class="view-section">
+            <!-- TOP 5 HIGH TRAFFIC STATIONS -->
+            <div class="card-glass mb-4"
+                style="border: 2px solid rgba(102, 126, 234, 0.2); background: linear-gradient(135deg, rgba(102, 126, 234, 0.03), rgba(118, 75, 162, 0.03));">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+                    <div class="d-flex align-items-center gap-2">
+                        <div
+                            style="width: 38px; height: 38px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px;">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0" style="color: #1e293b;">Top 5 High Traffic Stations</h5>
+                            <small class="text-muted">Based on actual booking data</small>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-2 mt-md-0">
+                        <button class="btn btn-sm rounded-pill"
+                            style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 6px 14px;"
+                            onclick="loadTopStations()">
+                            <i class="fas fa-sync me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+                <div id="top-stations-container">
+                    <div class="text-center py-4">
+                        <div class="spinner-border" style="color: #667eea;" role="status"></div>
+                        <p class="text-muted mt-2">Loading station data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Station Status & Crowding -->
+            <div class="card-glass">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <h5 class="fw-bold mb-0">Station Status & Crowding</h5>
+                    <button class="btn btn-primary rounded-pill btn-sm mt-2 mt-md-0" onclick="loadStations()"><i
+                            class="fas fa-sync me-2"></i>Refresh</button>
+                </div>
+                <div id="stations-list" class="row g-3"></div>
+            </div>
+        </div>
+
+        <!-- User Data View -->
+        <div id="users" class="view-section">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card-glass">
+                        <h5 class="fw-bold mb-4 text-primary">Top Wallet Balances</h5>
+                        <div class="table-responsive">
+                            <table class="table-glass">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Balance</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top-users-table">
+                                    <tr>
+                                        <td colspan="2" class="text-center">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card-glass">
+                        <h5 class="fw-bold mb-4 text-info">Top Spenders</h5>
+                        <div class="table-responsive">
+                            <table class="table-glass">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Total Spent</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="top-spenders-table">
+                                    <tr>
+                                        <td colspan="2" class="text-center">Loading...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics View -->
+        <div id="analytics" class="view-section">
+            <div class="card-glass">
+                <h5 class="fw-bold mb-4">Peak Hours Analysis</h5>
+                <div style="height: 400px;">
+                    <canvas id="peakHoursChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Announcements View -->
+        <div id="notifications" class="view-section">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card-glass">
+                        <h5 class="fw-bold mb-4">
+                            <i class="fas fa-bullhorn me-2 text-primary"></i>Create Announcement
+                        </h5>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Message</label>
+                            <textarea id="announcement-input" class="form-control" rows="4"
+                                placeholder="Enter announcement message..."></textarea>
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="createAnnouncement()">
+                            <i class="fas fa-paper-plane me-2"></i>Broadcast Announcement
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card-glass">
+                        <h5 class="fw-bold mb-4">Recent Announcements</h5>
+                        <div id="announcements-list" style="max-height: 400px; overflow-y: auto;">
+                            <div class="text-center text-muted p-3">Loading announcements...</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card-glass">
+                        <h5 class="fw-bold mb-4 text-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>System Alerts
+                        </h5>
+                        <div id="alerts-list">
+                            <div class="text-center text-muted p-3">No active alerts</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Emergency View -->
+        <div id="emergency" class="view-section">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card-glass border-danger" style="border-width: 3px !important;">
+                        <h5 class="fw-bold mb-4 text-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>Emergency Broadcast
+                        </h5>
+                        <div class="alert alert-danger">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Warning:</strong> This will send an alert to all active users!
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Emergency Message</label>
+                            <textarea id="emergency-input" class="form-control" rows="4"
+                                placeholder="Enter emergency message..."></textarea>
+                        </div>
+                        <button class="btn btn-danger w-100 btn-lg" onclick="sendEmergencyAlert()">
+                            <i class="fas fa-broadcast-tower me-2"></i>SEND EMERGENCY ALERT
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card-glass">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-2">
+                                <div
+                                    style="width: 36px; height: 36px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div>
+                                    <h5 class="fw-bold mb-0">Active Alerts</h5>
+                                    <small class="text-muted">Real-time emergency feed</small>
+                                </div>
+                            </div>
+                            <span class="badge rounded-pill" id="alert-count-badge"
+                                style="background: rgba(239,68,68,0.2); color: #ef4444; font-size: 12px; padding: 6px 12px;">0
+                                active</span>
+                        </div>
+                        <div id="emergency-list" style="max-height: 420px; overflow-y: auto;">
+                            <div class="text-center text-muted p-4">
+                                <i class="fas fa-check-circle"
+                                    style="font-size: 40px; opacity: 0.2; margin-bottom: 10px;"></i>
+                                <p class="mb-0">No active emergency alerts</p>
+                                <small>All systems operational</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feedback View -->
+        <div id="feedback" class="view-section">
+            <!-- User Feedback Section -->
+            <div class="card-glass mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <div>
+                        <h5 class="fw-bold mb-0"><i class="fas fa-comments me-2 text-primary"></i>User Feedback</h5>
+                        <small class="text-muted">View all feedback submitted by users</small>
+                    </div>
+                    <button class="btn btn-primary rounded-pill btn-sm mt-2 mt-md-0" onclick="loadFeedback()"><i
+                            class="fas fa-sync me-2"></i>Refresh</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-glass">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Type</th>
+                                <th>Message</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-table">
+                            <tr>
+                                <td colspan="5" class="text-center">Loading feedback...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Lost & Found Reports Section -->
+            <div class="card-glass">
+                <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+                    <div>
+                        <h5 class="fw-bold mb-0"><i class="fas fas fa-search me-2 text-warning"></i>Lost & Found Reports
+                        </h5>
+                        <small class="text-muted">Lost item reports from users</small>
+                    </div>
+                    <button class="btn btn-primary rounded-pill btn-sm mt-2 mt-md-0"
+                        onclick="loadFeedbackLostFound()"><i class="fas fa-sync me-2"></i>Refresh</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table-glass">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Item</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-lostfound-table">
+                            <tr>
+                                <td colspan="7" class="text-center">Loading lost & found reports...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <!-- app.js removed - API functionality is built-in below -->
+    <script>
+        // Initialize AOS
+        AOS.init({ duration: 600, once: true });
+
+        // Generate particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.width = particle.style.height = `${Math.random() * 60 + 20}px`;
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.animationDelay = `${Math.random() * 20}s`;
+            particlesContainer.appendChild(particle);
+        }
+
+        // === Toast Notification System ===
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-circle', info: 'fa-info-circle' };
+            const toast = document.createElement('div');
+            toast.className = `admin-toast ${type}`;
+            toast.innerHTML = `<i class="fas ${icons[type] || icons.info}"></i> ${message}`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // === Smart Admin Greeting ===
+        function updateAdminGreeting() {
+            const hour = new Date().getHours();
+            const el = document.getElementById('adminGreeting');
+            const sub = document.getElementById('adminSubGreeting');
+            if (!el || !sub) return;
+            if (hour >= 5 && hour < 12) {
+                el.textContent = 'Good Morning, Admin! \u2600\uFE0F';
+                sub.textContent = "Here's your metro system overview for today";
+            } else if (hour >= 12 && hour < 17) {
+                el.textContent = 'Good Afternoon, Admin! \uD83C\uDF1E';
+                sub.textContent = 'Midday operations looking good';
+            } else if (hour >= 17 && hour < 21) {
+                el.textContent = 'Good Evening, Admin! \uD83C\uDF06';
+                sub.textContent = "Wrapping up today's operations";
+            } else {
+                el.textContent = 'Late Night, Admin! \uD83C\uDF19';
+                sub.textContent = 'Night shift monitoring active';
+            }
+        }
+
+        // === Stat Card Update Timestamps ===
+        let lastStatUpdate = Date.now();
+        function updateStatTimestamps() {
+            const secsAgo = Math.floor((Date.now() - lastStatUpdate) / 1000);
+            const text = secsAgo < 5 ? 'Updated just now' : `Updated ${secsAgo}s ago`;
+            ['stat-updated-revenue', 'stat-updated-tickets', 'stat-updated-users', 'stat-updated-today'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = text;
+            });
+        }
+        setInterval(updateStatTimestamps, 5000);
+
+        // === Quick Action Helpers ===
+        function quickAnnouncement() {
+            // Navigate to announcements view
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('notifications').classList.add('active');
+            loadNotifications();
+            setTimeout(() => {
+                const ta = document.getElementById('announcement-input');
+                if (ta) { ta.focus(); ta.scrollIntoView({ behavior: 'smooth' }); }
+            }, 300);
+        }
+        function quickEmergency() {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('emergency').classList.add('active');
+            loadEmergency();
+        }
+        function exportReport() {
+            const rev = document.getElementById('total-revenue')?.textContent || '0';
+            const tickets = document.getElementById('total-tickets')?.textContent || '0';
+            const users = document.getElementById('total-users')?.textContent || '0';
+            const today = document.getElementById('today-revenue')?.textContent || '0';
+            const now = new Date().toLocaleString();
+            const report = `METROFLOW ADMIN REPORT\n${'='.repeat(35)}\nGenerated: ${now}\n\nTotal Revenue: Rs.${rev}\nTickets Sold: ${tickets}\nActive Users: ${users}\nToday's Income: Rs.${today}\n\n--- End of Report ---`;
+            const blob = new Blob([report], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `MetroFlow_Report_${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            showToast('Report downloaded successfully!', 'success');
+        }
+        function refreshAll() {
+            showToast('Refreshing all data...', 'info');
+            lastStatUpdate = Date.now();
+            loadDashboard();
+            loadRevenueChart();
+            loadCancellationRate();
+            // Glow effect on stats
+            ['stat-revenue-val', 'total-tickets', 'total-users', 'stat-today-val'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) { el.classList.add('stat-glow'); setTimeout(() => el.classList.remove('stat-glow'), 800); }
+            });
+            showToast('All data refreshed!', 'success');
+        }
+
+        // === Cancellation Rate (Enhanced) ===
+        let cancelLastUpdate = Date.now();
+        async function loadCancellationRate() {
+            try {
+                const data = await API.call('/api/admin/dashboard/stats');
+                if (data.success && data.stats) {
+                    const total = data.stats.all_tickets || 0;
+                    const cancelled = data.stats.cancelled_tickets || 0;
+                    const successful = total - cancelled;
+                    const rate = total > 0 ? ((cancelled / total) * 100).toFixed(1) : 0;
+                    const successRate = total > 0 ? (((total - cancelled) / total) * 100).toFixed(1) : 100;
+
+                    // Update donut chart
+                    const circumference = 2 * Math.PI * 65; // ~408.4
+                    const fillLen = (rate / 100) * circumference;
+                    const donut = document.getElementById('cancel-donut-fill');
+                    if (donut) {
+                        donut.setAttribute('stroke-dasharray', `${fillLen}, ${circumference}`);
+                        donut.classList.remove('status-healthy', 'status-watch', 'status-high');
+                        if (rate > 20) donut.classList.add('status-high');
+                        else if (rate > 10) donut.classList.add('status-watch');
+                        else donut.classList.add('status-healthy');
+                    }
+
+                    // Update rate text
+                    document.getElementById('cancel-rate-value').textContent = rate + '%';
+                    document.getElementById('cancel-total').textContent = total.toLocaleString();
+                    document.getElementById('cancel-count').textContent = cancelled.toLocaleString();
+                    document.getElementById('cancel-success').textContent = successful.toLocaleString();
+
+                    // Update progress bars
+                    document.getElementById('cancel-success-pct').textContent = successRate + '%';
+                    document.getElementById('cancel-fail-pct').textContent = rate + '%';
+                    document.getElementById('cancel-success-bar').style.width = successRate + '%';
+                    document.getElementById('cancel-fail-bar').style.width = rate + '%';
+
+                    // Update badge
+                    const badge = document.getElementById('cancel-rate-badge');
+                    if (rate > 20) {
+                        badge.textContent = '⚠ High';
+                        badge.style.background = 'rgba(239, 68, 68, 0.3)';
+                        badge.style.color = '#fca5a5';
+                    } else if (rate > 10) {
+                        badge.textContent = 'Watch';
+                        badge.style.background = 'rgba(245, 158, 11, 0.3)';
+                        badge.style.color = '#fcd34d';
+                    } else {
+                        badge.textContent = 'Healthy';
+                        badge.style.background = 'rgba(16, 185, 129, 0.3)';
+                        badge.style.color = '#6ee7b7';
+                    }
+
+                    // Update timestamp
+                    cancelLastUpdate = Date.now();
+                    document.getElementById('cancel-updated').textContent = 'Updated just now';
+                }
+            } catch (e) { console.error('Cancellation rate error:', e); }
+        }
+
+        // Keep cancel timestamp fresh
+        setInterval(() => {
+            const secAgo = Math.floor((Date.now() - cancelLastUpdate) / 1000);
+            const el = document.getElementById('cancel-updated');
+            if (el) el.textContent = secAgo < 5 ? 'Updated just now' : `Updated ${secAgo}s ago`;
+        }, 5000);
+
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('live-clock').textContent = timeString;
+        }
+        updateClock();
+        setInterval(updateClock, 60000);
+
+        // View Management
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+
+            // Close mobile sidebar
+            if (window.innerWidth <= 992) {
+                document.getElementById('sidebar').classList.remove('show');
+            }
+
+            // Load data for specific views
+            if (viewId === 'live') loadLiveFeed();
+            if (viewId === 'stations') { loadStations(); loadTopStations(); }
+            if (viewId === 'analytics') loadPeakHours();
+            if (viewId === 'users') loadUsers();
+            if (viewId === 'notifications') loadNotifications();
+            if (viewId === 'emergency') loadEmergency();
+            if (viewId === 'feedback') {
+                loadFeedback();
+                loadFeedbackLostFound();
+            }
+
+        }
+
+        // Mobile Sidebar Toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('show');
+        }
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function (event) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.menu-toggle');
+
+            if (window.innerWidth <= 992) {
+                if (!sidebar.contains(event.target) && !toggle.contains(event.target)) {
+                    sidebar.classList.remove('show');
+                }
+            }
+        });
+
+        // Logout Function - FIXED TO REDIRECT TO INDEX PAGE
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                fetch('/api/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                }).then(() => {
+                    localStorage.removeItem('metro_logged_in');
+                    // ✅ REDIRECT TO INDEX PAGE INSTEAD OF ADMIN PAGE
+                    window.location.href = 'index.html';
+                }).catch(err => {
+                    console.error('Logout error:', err);
+                    // Even if there's an error, still redirect
+                    window.location.href = 'index.html';
+                });
+            }
+        }
+
+        /* --- DASHBOARD FUNCTIONS --- */
+        async function loadDashboard() {
+            try {
+                const data = await API.call('/api/admin/dashboard/stats');
+                if (data.success && data.stats) {
+                    const s = data.stats;
+
+                    // Animation counter effect
+                    lastStatUpdate = Date.now();
+                    animateValue('total-revenue', s.total_revenue || 0);
+                    document.getElementById('total-tickets').textContent = (s.total_tickets || 0).toLocaleString();
+                    document.getElementById('total-users').textContent = (s.total_users || 0).toLocaleString();
+                    animateValue('today-revenue', s.today_revenue || 0);
+
+                    // Update revenue growth if available
+                    if (s.revenue_growth !== undefined) {
+                        const growthEl = document.getElementById('revenue-growth');
+                        if (growthEl) {
+                            growthEl.textContent = (s.revenue_growth >= 0 ? '+' : '') + s.revenue_growth.toFixed(1) + '%';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Dashboard stats error:', error);
+            }
+        }
+
+        function animateValue(id, end) {
+            const obj = document.getElementById(id);
+            if (!obj) return;
+            let start = 0;
+            let duration = 1000;
+            let startTime = null;
+            function animation(currentTime) {
+                if (!startTime) startTime = currentTime;
+                const progress = Math.min((currentTime - startTime) / duration, 1);
+                obj.innerHTML = Math.floor(progress * end).toLocaleString();
+                if (progress < 1) requestAnimationFrame(animation);
+            }
+            requestAnimationFrame(animation);
+        }
+
+        /* --- API CONNECTION HELPER --- */
+        const API = {
+            async call(endpoint, method = 'GET', body = null) {
+                try {
+                    const options = {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include'
+                    };
+                    if (body) options.body = JSON.stringify(body);
+
+                    const response = await fetch(endpoint, options);
+
+                    if (!response.ok) {
+                        throw new Error(`Server Error: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error("API Connection Failed:", error);
+                    return { success: false, error: error.message };
+                }
+            },
+
+            async get(endpoint) {
+                return this.call(endpoint, 'GET');
+            },
+
+            async post(endpoint, body) {
+                return this.call(endpoint, 'POST', body);
+            }
+        };
+
+        // --- GLOBAL CHART VARIABLES ---
+        let revenueChartInstance = null;
+        const charts = {
+            peakHours: null
+        };
+
+        /* --- REVENUE CHART (FIXED) --- */
+        async function loadRevenueChart(period = 'week') {
+
+
+            // Update Buttons
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.trim().toLowerCase() === period) btn.classList.add('active');
+            });
+
+            const ctx = document.getElementById('revenueChart');
+            if (!ctx) return;
+
+            let labels = ['No Data'];
+            let data = [0];
+            let total = 0;
+
+            try {
+                const response = await API.call(`/api/admin/analytics/revenue?period=${period}`, 'GET');
+
+
+
+                if (response && response.success) {
+                    if (response.total > 0 || response.tickets_sold > 0) {
+                        // Database has data
+                        labels = response.labels;
+                        data = response.data;
+                        total = response.total || 0;
+
+                        // ✅ UPDATE ALL STAT CARDS FROM DATABASE
+                        const ticketsEl = document.getElementById('statTickets');
+                        const usersEl = document.getElementById('statUsers');
+
+                        if (ticketsEl && response.tickets_sold !== undefined) {
+                            ticketsEl.textContent = response.tickets_sold.toLocaleString();
+                        }
+                        if (usersEl && response.active_users !== undefined) {
+                            usersEl.textContent = response.active_users.toLocaleString();
+                        }
+
+                        // Update growth indicator
+                        if (response.revenue_growth !== undefined) {
+                            const growthInd = document.getElementById('revenue-growth-indicator');
+                            if (growthInd) {
+                                const isPositive = response.revenue_growth >= 0;
+                                growthInd.innerHTML = `<i class="fas fa-arrow-${isPositive ? 'up' : 'down'} me-1"></i>${isPositive ? '+' : ''}${response.revenue_growth.toFixed(1)}%`;
+                                growthInd.className = isPositive ? 'text-success' : 'text-danger';
+                            }
+                        }
+
+
+                    } else {
+                        // Database is empty
+                        console.warn("Database returned 0 sales. Showing empty chart.");
+                        if (period === 'week') labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                        if (period === 'month') labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                        if (period === 'year') labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        data = new Array(labels.length).fill(0);
+                    }
+                }
+            } catch (e) {
+                console.error("❌ Chart Error:", e);
+            }
+
+            // Update Revenue Stat
+            const elRevenue = document.getElementById('statRevenue');
+            if (elRevenue) elRevenue.textContent = total.toLocaleString();
+
+            // Destroy Old Chart
+            if (window.revenueChartInstance) {
+                window.revenueChartInstance.destroy();
+            }
+
+            // Render New Chart
+            window.revenueChartInstance = new Chart(ctx.getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Revenue',
+                        data: data,
+                        backgroundColor: 'rgba(0, 242, 254, 0.25)',
+                        borderColor: '#00f2fe',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#00f2fe',
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(255,255,255,0.1)' },
+                            ticks: { color: 'white' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: 'white' }
+                        }
+                    }
+                }
+            });
+        }
+
+        /* --- SYSTEM HEALTH REMOVED --- */
+
+        /* --- LIVE FEED --- */
+        async function loadLiveFeed() {
+            try {
+                const data = await API.call('/api/admin/bookings/live');
+                if (data.success && data.bookings) {
+                    const feedEl = document.getElementById('live-feed');
+                    if (data.bookings.length === 0) {
+                        feedEl.innerHTML = '<div class="text-center text-muted p-5">No recent bookings</div>';
+                        return;
+                    }
+
+                    feedEl.innerHTML = data.bookings.map(b => `
+                        <div class="d-flex align-items-center p-3 mb-2 rounded-3 bg-white shadow-sm" style="transition: transform 0.2s;">
+                            <div class="me-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center fw-bold" 
+                                     style="width:45px; height:45px; background:${b.cancelled ? '#fee2e2' : '#d1fae5'}; color: ${b.cancelled ? '#dc2626' : '#059669'}">
+                                    <i class="fas ${b.cancelled ? 'fa-times' : 'fa-check'}"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between flex-wrap">
+                                    <h6 class="mb-0 fw-bold text-dark">${b.username}</h6>
+                                    <span class="badge ${b.cancelled ? 'bg-danger' : 'bg-success'} rounded-pill">${b.cancelled ? 'Refunded' : 'Success'}</span>
+                                </div>
+                                <small class="text-muted">${b.source} <i class="fas fa-arrow-right mx-1 text-primary"></i> ${b.destination}</small>
+                            </div>
+                            <div class="text-end ms-3">
+                                <div class="fw-bold text-dark">₹${b.fare}</div>
+                                <small class="text-muted" style="font-size:10px">${new Date(b.bookingDate).toLocaleTimeString()}</small>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Live feed error:', error);
+                document.getElementById('live-feed').innerHTML = '<div class="text-center text-danger p-5">Error loading feed</div>';
+            }
+        }
+
+        /* --- STATIONS --- */
+        async function loadStations() {
+            try {
+                const data = await API.call('/api/admin/stations/status');
+                if (data.success && data.stations) {
+                    const listEl = document.getElementById('stations-list');
+                    if (data.stations.length === 0) {
+                        listEl.innerHTML = '<div class="col-12 text-center text-muted p-5">No station data available</div>';
+                        return;
+                    }
+
+                    listEl.innerHTML = data.stations.map(s => `
+                        <div class="col-md-4">
+                            <div class="card-glass border-start border-5 ${s.status === 'crowded' ? 'border-danger' : s.status === 'moderate' ? 'border-warning' : 'border-success'}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="fw-bold mb-0 text-dark">${s.station}</h6>
+                                    <span class="badge ${s.status === 'crowded' ? 'bg-danger' : s.status === 'moderate' ? 'bg-warning text-dark' : 'bg-success'} rounded-pill">
+                                        ${s.status_text}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between text-muted mt-3">
+                                    <small><i class="fas fa-user-friends me-1"></i>${s.total_passengers} pax</small>
+                                    <small><i class="fas fa-subway me-1"></i>${s.departures + s.arrivals} Trips</small>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Stations error:', error);
+                document.getElementById('stations-list').innerHTML = '<div class="col-12 text-center text-danger p-5">Error loading stations</div>';
+            }
+        }
+
+        /* --- TOP 5 HIGH TRAFFIC STATIONS --- */
+        async function loadTopStations() {
+            const container = document.getElementById('top-stations-container');
+            container.innerHTML = '<div class="text-center py-3"><div class="spinner-border" style="color: #667eea;" role="status"></div></div>';
+
+            try {
+                const data = await API.call('/api/admin/top-stations');
+                if (data.success && data.stations && data.stations.length > 0) {
+                    const maxPax = data.stations[0].total_passengers || 1;
+
+                    container.innerHTML = data.stations.map((s, i) => {
+                        const pct = Math.round((s.total_passengers / maxPax) * 100);
+                        const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+                        const rankColors = ['#FFD700', '#C0C0C0', '#CD7F32', '#667eea', '#764ba2'];
+                        const colors = {
+                            critical: { border: '#ef4444', bg: '#fff1f2', bar: 'linear-gradient(90deg, #ef4444, #f87171)', badge: '#ef4444' },
+                            high: { border: '#f59e0b', bg: '#fffbeb', bar: 'linear-gradient(90deg, #f59e0b, #fbbf24)', badge: '#f59e0b' },
+                            moderate: { border: '#3b82f6', bg: '#eff6ff', bar: 'linear-gradient(90deg, #3b82f6, #60a5fa)', badge: '#3b82f6' },
+                            low: { border: '#10b981', bg: '#ecfdf5', bar: 'linear-gradient(90deg, #10b981, #34d399)', badge: '#10b981' }
+                        };
+                        const c = colors[s.level] || colors.low;
+
+                        return `
+                        <div class="d-flex align-items-center p-3 mb-3" style="border-left: 5px solid ${c.border}; background: ${c.bg}; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.06);">
+                            <div style="font-size: 28px; min-width: 44px; text-align: center; line-height: 1;">${medals[i]}</div>
+                            <div style="flex: 1; min-width: 0; margin: 0 14px;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="fw-bold mb-0" style="font-size: 0.95rem; text-transform: capitalize; color: #1e293b;">${s.station_name.replace(/_/g, ' ')}</h6>
+                                    <span class="badge rounded-pill" style="font-size: 10px; background: ${c.badge}; color: white; padding: 4px 10px;">${s.level_text}</span>
+                                </div>
+                                <div style="height: 8px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 8px;">
+                                    <div style="height: 100%; width: ${pct}%; background: ${c.bar}; border-radius: 4px; transition: width 1s ease;"></div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-3" style="font-size: 12px; color: #334155;">
+                                    <span><i class="fas fa-user-friends me-1" style="color: ${c.badge};"></i><strong>${s.total_passengers}</strong> passengers</span>
+                                    <span><i class="fas fa-arrow-circle-up me-1" style="color: #10b981;"></i><strong>${s.departures}</strong> departures</span>
+                                    <span><i class="fas fa-arrow-circle-down me-1" style="color: #3b82f6;"></i><strong>${s.arrivals}</strong> arrivals</span>
+                                    <span><i class="fas fa-rupee-sign me-1" style="color: #f59e0b;"></i><strong>₹${s.total_revenue.toFixed(0)}</strong> revenue</span>
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                } else {
+                    container.innerHTML = '<div class="text-center py-3 text-muted"><i class="fas fa-database me-2"></i>No booking data available yet</div>';
+                }
+            } catch (error) {
+                console.error('Top stations error:', error);
+                container.innerHTML = '<div class="text-center py-3 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error loading data</div>';
+            }
+        }
+
+        /* --- SEED TRAFFIC DATA --- */
+        async function seedTrafficData() {
+            if (!confirm('This will add high-traffic ticket data for 5 key stations. Continue?')) return;
+            try {
+                const data = await API.call('/api/admin/seed-traffic', 'POST');
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    loadTopStations();
+                    loadStations();
+                } else {
+                    showToast(data.error || 'Failed to seed data', 'error');
+                }
+            } catch (error) {
+                console.error('Seed error:', error);
+                showToast('Error seeding traffic data', 'error');
+            }
+        }
+
+        /* --- USERS --- */
+        async function loadUsers() {
+            try {
+                const data = await API.call('/api/admin/users/analytics');
+                if (data.success) {
+                    // Top wallet balances
+                    const usersList = data.top_balance || [];
+                    document.getElementById('top-users-table').innerHTML = usersList.length > 0
+                        ? usersList.map(u => `
+                            <tr>
+                                <td class="fw-bold text-dark">
+                                    <img src="https://ui-avatars.com/api/?name=${u.username}&background=random" class="rounded-circle me-2" width="30">
+                                    ${u.username}
+                                </td>
+                                <td class="text-success fw-bold">₹${u.walletBalance.toFixed(2)}</td>
+                            </tr>
+                        `).join('')
+                        : '<tr><td colspan="2" class="text-center text-muted">No data available</td></tr>';
+
+                    // Top spenders
+                    const spendersList = data.top_spenders || [];
+                    document.getElementById('top-spenders-table').innerHTML = spendersList.length > 0
+                        ? spendersList.map(u => `
+                            <tr>
+                                <td class="fw-bold text-dark">${u.username}</td>
+                                <td>₹${u.total_spent.toFixed(2)}</td>
+                            </tr>
+                        `).join('')
+                        : '<tr><td colspan="2" class="text-center text-muted">No data available</td></tr>';
+                }
+            } catch (error) {
+                console.error('Users analytics error:', error);
+            }
+        }
+
+        /* --- FEEDBACK --- */
+        async function loadFeedback() {
+            try {
+                const response = await fetch('/api/admin/feedbacks', {
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success && data.feedbacks) {
+                    const feedbacks = data.feedbacks;
+                    const table = document.getElementById('feedback-table');
+
+                    if (feedbacks.length === 0) {
+                        table.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No feedback submitted yet</td></tr>';
+                        return;
+                    }
+
+                    table.innerHTML = feedbacks.map(fb => {
+                        const typeColor = {
+                            'complaint': 'danger',
+                            'suggestion': 'info',
+                            'appreciation': 'success',
+                            'inquiry': 'warning'
+                        }[fb.type.toLowerCase()] || 'secondary';
+
+                        return `
+                            <tr>
+                                <td class="fw-bold">#${fb.feedbackId}</td>
+                                <td>
+                                    <img src="https://ui-avatars.com/api/?name=${fb.username}&background=random" class="rounded-circle me-2" width="30">
+                                    ${fb.username}
+                                </td>
+                                <td><span class="badge bg-${typeColor}">${fb.type}</span></td>
+                                <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${fb.text}</td>
+                                <td><small class="text-muted">${fb.timestamp}</small></td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading feedback:', error);
+                document.getElementById('feedback-table').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading feedback</td></tr>';
+            }
+        }
+
+        /* --- LOAD LOST & FOUND FOR FEEDBACK VIEW --- */
+        async function loadFeedbackLostFound() {
+            try {
+                const response = await fetch('/api/admin/lost-found', {
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success && data.items) {
+                    const items = data.items;
+                    const table = document.getElementById('feedback-lostfound-table');
+
+                    if (items.length === 0) {
+                        table.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No lost item reports</td></tr>';
+                        return;
+                    }
+
+                    table.innerHTML = items.map(item => {
+                        const statusColor = {
+                            'SEARCHING': 'warning',
+                            'FOUND': 'success',
+                            'CLOSED': 'secondary'
+                        }[item.status] || 'info';
+
+                        return `
+                            <tr>
+                                <td class="fw-bold">#${item.id}</td>
+                                <td>
+                                    <img src="https://ui-avatars.com/api/?name=${item.username}&background=random" class="rounded-circle me-2" width="30">
+                                    ${item.username}
+                                </td>
+                                <td class="fw-bold">${item.item}</td>
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.description || '-'}</td>
+                                <td><span class="badge bg-${statusColor}">${item.status}</span></td>
+                                <td><small class="text-muted">${item.reportDate || 'N/A'}</small></td>
+                                <td>
+                                    <select class="form-select form-select-sm" onchange="updateLostFoundStatus(${item.id}, this.value)" style="width: auto; min-width: 120px;">
+                                        <option value="">Change...</option>
+                                        <option value="SEARCHING" ${item.status === 'SEARCHING' ? 'disabled' : ''}>Searching</option>
+                                        <option value="FOUND" ${item.status === 'FOUND' ? 'disabled' : ''}>Found</option>
+                                        <option value="CLOSED" ${item.status === 'CLOSED' ? 'disabled' : ''}>Close</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading lost-found items in feedback view:', error);
+                document.getElementById('feedback-lostfound-table').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading reports</td></tr>';
+            }
+        }
+
+        /* --- LOST & FOUND --- */
+        async function loadLostFound() {
+            try {
+                const response = await fetch('/api/admin/lost-found', {
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+
+                if (data.success && data.items) {
+                    const items = data.items;
+                    const table = document.getElementById('lostfound-table');
+
+                    if (items.length === 0) {
+                        table.innerHTML = '<tr><td colspan="7" class="text-center text-muted">No lost item reports</td></tr>';
+                        return;
+                    }
+
+                    table.innerHTML = items.map(item => {
+                        const statusColor = {
+                            'SEARCHING': 'warning',
+                            'FOUND': 'success',
+                            'CLOSED': 'secondary'
+                        }[item.status] || 'info';
+
+                        return `
+                            <tr>
+                                <td class="fw-bold">#${item.id}</td>
+                                <td>${item.username}</td>
+                                <td class="fw-bold">${item.item}</td>
+                                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.description || '-'}</td>
+                                <td><span class="badge bg-${statusColor}">${item.status}</span></td>
+                                <td><small class="text-muted">${item.reportDate}</small></td>
+                                <td>
+                                    <select class="form-select form-select-sm" onchange="updateLostFoundStatus(${item.id}, this.value)" style="width: auto; min-width: 120px;">
+                                        <option value="">Change...</option>
+                                        <option value="SEARCHING" ${item.status === 'SEARCHING' ? 'disabled' : ''}>Searching</option>
+                                        <option value="FOUND" ${item.status === 'FOUND' ? 'disabled' : ''}>Found</option>
+                                        <option value="CLOSED" ${item.status === 'CLOSED' ? 'disabled' : ''}>Close</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading lost-found items:', error);
+                document.getElementById('lostfound-table').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading reports</td></tr>';
+            }
+        }
+
+        /* --- UPDATE LOST ITEM STATUS --- */
+        async function updateLostFoundStatus(itemId, newStatus) {
+            if (!newStatus) return;
+
+            try {
+                const response = await fetch(`/api/admin/lost-found/${itemId}/status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('Status updated successfully!', 'success');
+                    loadFeedbackLostFound();
+                } else {
+                    showToast('Failed to update status', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showToast('Error updating status', 'error');
+            }
+        }
+
+        /* --- PEAK HOURS --- */
+        async function loadPeakHours() {
+            try {
+                const data = await API.call('/api/admin/analytics/peakhours');
+                const stats = data.hourly || [];
+
+                if (data.success && stats.length > 0) {
+                    const ctx = document.getElementById('peakHoursChart');
+                    if (!ctx) return;
+
+                    if (charts.peakHours) charts.peakHours.destroy();
+
+                    charts.peakHours = new Chart(ctx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: stats.map(h => `${h.hour}:00`),
+                            datasets: [{
+                                label: 'Bookings',
+                                data: stats.map(h => h.bookings),
+                                backgroundColor: '#764ba2',
+                                borderRadius: 10,
+                                barThickness: 20
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: { grid: { display: false } },
+                                y: { beginAtZero: true }
+                            }
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Peak hours error:', error);
+            }
+        }
+
+        /* --- ANNOUNCEMENTS --- */
+        async function loadNotifications() {
+            try {
+                const data = await API.call('/api/admin/notifications/manage');
+                if (data.success) {
+                    const listEl = document.getElementById('announcements-list');
+                    const announcements = data.announcements || [];
+
+                    if (announcements.length === 0) {
+                        listEl.innerHTML = '<div class="text-center text-muted p-3">No announcements yet</div>';
+                    } else {
+                        listEl.innerHTML = announcements.map(a => `
+                            <div class="p-3 bg-white rounded shadow-sm border-start border-4 ${a.message.startsWith('EMERGENCY:') ? 'border-danger' : 'border-warning'} mb-3 position-relative">
+                                <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2" 
+                                        onclick="deleteAnnouncement(${a.id})" 
+                                        title="Delete this announcement">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <div class="small text-muted mb-1">${new Date(a.createdDate).toLocaleString()}</div>
+                                <div class="fw-bold text-dark ${a.message.startsWith('EMERGENCY:') ? 'text-danger' : ''}">${a.message}</div>
+                            </div>
+                        `).join('');
+                    }
+                }
+                loadAlerts();
+            } catch (error) {
+                console.error('Notifications error:', error);
+            }
+        }
+
+        async function deleteAnnouncement(id) {
+            if (confirm('Are you sure you want to delete this announcement?')) {
+                try {
+                    const result = await API.call(`/api/admin/announcements/${id}`, 'DELETE');
+                    if (result.success) {
+                        showToast('Announcement deleted!', 'success');
+                        loadNotifications();
+                    } else {
+                        showToast('Failed to delete: ' + (result.error || 'Unknown error'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Delete error:', error);
+                    showToast('Error deleting announcement', 'error');
+                }
+            }
+        }
+
+        async function createAnnouncement() {
+            const message = document.getElementById('announcement-input').value.trim();
+            if (!message) {
+                showToast('Please enter a message', 'warning');
+                return;
+            }
+
+            try {
+                const result = await API.post('/api/admin/notifications/manage', { message });
+                if (result.success) {
+                    document.getElementById('announcement-input').value = '';
+                    showToast('Announcement posted successfully!', 'success');
+                    loadNotifications();
+                } else {
+                    showToast('Failed to post: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                console.error('Create announcement error:', error);
+                showToast('Error posting announcement', 'error');
+            }
+        }
+
+        async function loadAlerts() {
+            try {
+                const data = await API.call('/api/admin/alerts/system');
+                if (data.success && data.alerts && data.alerts.length > 0) {
+                    document.getElementById('alerts-list').innerHTML = data.alerts.map(a => `
+                        <div class="alert alert-${a.severity === 'danger' ? 'danger' : 'warning'} d-flex align-items-center shadow-sm border-0 mb-3">
+                            <i class="fas fa-exclamation-triangle me-3 fa-lg"></i>
+                            <div>
+                                <strong>${a.type}</strong><br>
+                                ${a.message}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    document.getElementById('alerts-list').innerHTML = '<div class="text-center text-muted p-3">No active alerts</div>';
+                }
+            } catch (error) {
+                console.error('Alerts error:', error);
+            }
+        }
+
+        /* --- EMERGENCY --- */
+        async function loadEmergency() {
+            try {
+                const data = await API.call('/api/admin/emergency/alerts');
+                if (data.success) {
+                    const listEl = document.getElementById('emergency-list');
+                    const alerts = data.incidents || [];
+                    const badge = document.getElementById('alert-count-badge');
+
+                    if (badge) {
+                        badge.textContent = alerts.length > 0 ? `${alerts.length} active` : '0 active';
+                        badge.style.background = alerts.length > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)';
+                        badge.style.color = alerts.length > 0 ? '#ef4444' : '#10b981';
+                    }
+
+                    if (alerts.length === 0) {
+                        listEl.innerHTML = `
+                            <div class="text-center text-muted p-4">
+                                <i class="fas fa-check-circle" style="font-size: 40px; opacity: 0.2; margin-bottom: 10px;"></i>
+                                <p class="mb-0">No active emergency alerts</p>
+                                <small>All systems operational</small>
+                            </div>`;
+                    } else {
+                        listEl.innerHTML = alerts.map((a, idx) => {
+                            const timeAgo = getTimeAgo(a.createdDate);
+                            return `
+                            <div class="mb-3" style="animation: fadeIn 0.3s ease ${idx * 0.08}s both;">
+                                <div style="background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(220,38,38,0.06)); border: 1px solid rgba(239,68,68,0.25); border-left: 4px solid #ef4444; border-radius: 12px; padding: 14px 16px;">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div style="width: 28px; height: 28px; background: rgba(239,68,68,0.15); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                                <i class="fas fa-exclamation-triangle" style="color: #ef4444; font-size: 12px;"></i>
+                                            </div>
+                                            <span class="badge" style="background: rgba(239,68,68,0.2); color: #ef4444; font-size: 10px; padding: 4px 8px; border-radius: 6px;">EMERGENCY</span>
+                                        </div>
+                                        <button class="btn btn-sm" onclick="resolveAlert(${a.id})" style="background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; font-size: 11px; padding: 4px 10px;" title="Resolve & Dismiss">
+                                            <i class="fas fa-check me-1"></i>Resolve
+                                        </button>
+                                    </div>
+                                    <p class="mb-1 mt-2 fw-semibold" style="color: #1e293b; font-size: 14px;">${a.message}</p>
+                                    <div class="d-flex align-items-center gap-3" style="font-size: 11px; color: #94a3b8;">
+                                        <span><i class="far fa-clock me-1"></i>${timeAgo}</span>
+                                        <span><i class="far fa-calendar me-1"></i>${new Date(a.createdDate).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                                    </div>
+                                </div>
+                            </div>`;
+                        }).join('');
+                    }
+                }
+            } catch (error) {
+                console.error('Emergency error:', error);
+            }
+        }
+
+        function getTimeAgo(dateStr) {
+            const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+            if (diff < 60) return 'Just now';
+            if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+            if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+            return `${Math.floor(diff / 86400)}d ago`;
+        }
+
+        async function resolveAlert(alertId) {
+            if (!confirm('Resolve and dismiss this emergency alert?')) return;
+            try {
+                const result = await API.call(`/api/admin/emergency/alerts/${alertId}`, 'DELETE');
+                if (result.success) {
+                    showToast('Alert resolved successfully', 'success');
+                    loadEmergency();
+                } else {
+                    showToast('Failed to resolve: ' + (result.error || ''), 'error');
+                }
+            } catch (e) {
+                showToast('Error resolving alert', 'error');
+            }
+        }
+
+        async function sendEmergencyAlert() {
+            const message = document.getElementById('emergency-input').value.trim();
+            if (!message) {
+                showToast('Please enter an emergency message', 'warning');
+                return;
+            }
+
+            if (confirm("⚠️ ARE YOU SURE? This will alert all users!")) {
+                try {
+                    const result = await API.post('/api/admin/emergency/alerts', { message, type: 'general' });
+                    if (result.success) {
+                        document.getElementById('emergency-input').value = '';
+                        showToast('EMERGENCY BROADCAST SENT!', 'warning');
+                        loadEmergency();
+                    } else {
+                        showToast('Failed to send: ' + (result.error || 'Unknown error'), 'error');
+                    }
+                } catch (error) {
+                    console.error('Emergency alert error:', error);
+                    showToast('Error sending emergency alert', 'error');
+                }
+            }
+        }
+
+        /* --- INIT --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAdminGreeting();
+            loadDashboard();
+            loadRevenueChart();
+            loadCancellationRate();
+            setInterval(loadDashboard, 10000);
+            setInterval(loadCancellationRate, 30000);
+        });
+    </script>
+</body>
+
+</html>
